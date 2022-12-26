@@ -8,18 +8,18 @@ fn parse() -> Result<(), Box<dyn Error>> {
     let regex_mismatch_and_indel = Regex::new(r"[ACGTNacgtn]{1}").unwrap();
     let mut reader = csv::ReaderBuilder::new().delimiter(b'\t').has_headers(false).from_reader(io::stdin());
 
-    for results in reader.records() {
-        let record = results?;
-        let chromosome = &record[0];
-        let position = &record[1];
-        let reference_base = &record[2];
+    for result in reader.records() {
+        let records = result?;
+        let chromosome = &records[0];
+        let position = &records[1];
+        let reference_base = &records[2];
 
         print!("{}\t{}\t{}", chromosome, position, reference_base);
 
         let mut record_index = 3;
-        while record_index < record.len() {
+        while record_index < records.len() {
             // pileup reads
-            let pileup_reads = &record[record_index + 1];
+            let pileup_reads = &records[record_index + 1];
 
             // count matched bases
             let count_match = pileup_reads.matches(".").count() + pileup_reads.matches(",").count();
