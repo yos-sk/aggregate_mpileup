@@ -7,5 +7,4 @@ RUN git clone https://github.com/kyamamot/aggregate_mpileup.git && \
     cd aggregate_mpileup && \
     cargo build --release
 
-
-
+CMD ["/bin/bash"]
