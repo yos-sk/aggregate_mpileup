@@ -39,7 +39,7 @@ fn parse() -> Result<(), Box<dyn Error>> {
             // depth
             let depth = count_match + count_mismatch;
 
-            print!("\t{}:{}:{}", count_match, count_mismatch, depth);
+            print!("\t{},{},{}", depth, count_match, count_mismatch);
 
             record_index += 3;
         }
