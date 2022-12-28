@@ -5,7 +5,7 @@ use std::process;
 
 fn parse() -> Result<(), Box<dyn Error>> {
     let regex_indel = Regex::new(r"[\+\-]{1}(\d+)").unwrap();
-    let regex_mismatch_and_indel = Regex::new(r"[ACGTNacgtn]{1}").unwrap();
+    let regex_mismatch = Regex::new(r"[ACGTNacgtn]{1}").unwrap();
     let mut reader = csv::ReaderBuilder::new().delimiter(b'\t').has_headers(false).from_reader(io::stdin());
 
     for result in reader.records() {
@@ -21,25 +21,33 @@ fn parse() -> Result<(), Box<dyn Error>> {
             // pileup reads
             let pileup_reads = &records[record_index + 1];
 
-            // count matched bases
-            let count_match = pileup_reads.matches(".").count() + pileup_reads.matches(",").count();
-
-            // count indel bases
-            let mut count_indel = 0;
+            // count insertion occurrence
+            let count_insertion_occurrence = pileup_reads.matches("+").count();
+            
+            // count deletion occurrence
+            let count_deletion_occurrence = pileup_reads.matches("-").count();
+            
+            // count insertion + deletion base
+            let mut count_indel_base = 0;
             for capture in regex_indel.captures_iter(pileup_reads) {
-                let _str_count_indel = capture.get(1).unwrap().as_str();
-                let _count_indel: usize = _str_count_indel.parse().unwrap();
-                count_indel += _count_indel;
+                let _str_count_indel_base = capture.get(1).unwrap().as_str();
+                let _count_indel_base: usize = _str_count_indel_base.parse().unwrap();
+                count_indel_base += _count_indel_base;
             }
+            
+            // count substitution base
+            let count_substitution_base = regex_mismatch.find_iter(pileup_reads).count() - count_indel_base;
+            
+            // count match base
+            let count_match_base = pileup_reads.matches(".").count() + pileup_reads.matches(",").count() - count_insertion_occurrence - count_deletion_occurrence;
 
-            // count mismatch bases
-            let count_mismatch_and_indel = regex_mismatch_and_indel.find_iter(pileup_reads).count();
-            let count_mismatch = count_mismatch_and_indel - count_indel;
-
+            // count mismatch occurrence
+            let count_mismatch_occurrence = count_substitution_base + count_insertion_occurrence + count_deletion_occurrence;
+            
             // depth
-            let depth = count_match + count_mismatch;
+            let depth = count_match_base + count_mismatch_occurrence;
 
-            print!("\t{},{},{}", depth, count_match, count_mismatch);
+            print!("\t{},{},{},{},{},{}", depth, count_match_base, count_mismatch_occurrence, count_substitution_base, count_insertion_occurrence, count_deletion_occurrence);
 
             record_index += 3;
         }
