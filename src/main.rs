@@ -1,64 +1,78 @@
-use regex::Regex;
-use std::error::Error;
-use std::io;
+use clap::{Parser, Subcommand};
 use std::process;
+mod aggregate;
+mod parse;
 
-fn parse() -> Result<(), Box<dyn Error>> {
-    let regex_indel = Regex::new(r"[\+\-]{1}(\d+)").unwrap();
-    let regex_mismatch = Regex::new(r"[ACGTNacgtn]{1}").unwrap();
-    let mut reader = csv::ReaderBuilder::new().delimiter(b'\t').has_headers(false).from_reader(io::stdin());
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Arguments {
+    #[command(subcommand)]
+    command: Commands,
+}
 
-    for result in reader.records() {
-        let records = result?;
-        let chromosome = &records[0];
-        let position = &records[1];
-        let reference_base = &records[2];
+#[derive(Subcommand)]
+enum Commands {
+    Parse {
+        #[arg(short, long)]
+        input_file: String,
+        
+        #[arg(short, long)]
+        output_file: String,
+    },
+    
+    Aggregate {
+        #[arg(short, long)]
+        input_file: String,
 
-        print!("{}\t{}\t{}", chromosome, position, reference_base);
+        #[arg(short, long)]
+        whitelist_output_file: String,
 
-        let mut record_index = 3;
-        while record_index < records.len() {
-            // pileup reads
-            let pileup_reads = &records[record_index + 1];
+        #[arg(short, long)]
+        blacklist_output_file: String,
 
-            // count insertion occurrence
-            let count_insertion_occurrence = pileup_reads.matches("+").count();
-            
-            // count deletion occurrence
-            let count_deletion_occurrence = pileup_reads.matches("-").count();
-            
-            // count insertion + deletion base
-            let mut count_indel_base = 0;
-            for capture in regex_indel.captures_iter(pileup_reads) {
-                let _str_count_indel_base = capture.get(1).unwrap().as_str();
-                let _count_indel_base: usize = _str_count_indel_base.parse().unwrap();
-                count_indel_base += _count_indel_base;
-            }
-            
-            // count substitution base
-            let count_substitution_base = regex_mismatch.find_iter(pileup_reads).count() - count_indel_base;
-            
-            // count match base
-            let count_match_base = pileup_reads.matches(".").count() + pileup_reads.matches(",").count() - count_insertion_occurrence - count_deletion_occurrence;
+        #[arg(long, default_value = "10")]
+        min_depth: String,
 
-            // count mismatch occurrence
-            let count_mismatch_occurrence = count_substitution_base + count_insertion_occurrence + count_deletion_occurrence;
-            
-            // depth
-            let depth = count_match_base + count_mismatch_occurrence;
+        #[arg(long, default_value = "0.05")]
+        min_mismatch_ratio: String,
 
-            print!("\t{},{},{},{},{},{}", depth, count_match_base, count_mismatch_occurrence, count_substitution_base, count_insertion_occurrence, count_deletion_occurrence);
+        #[arg(long, default_value = "5")]
+        min_samples_for_blacklist: String,
 
-            record_index += 3;
-        }
-        println!("");
-    }
-    Ok(())
+        #[arg(long, default_value = "20")]
+        min_samples_for_whitelist: String,
+    },
 }
 
 fn main() {
-    if let Err(error) = parse() {
-        eprintln!("{}", error);
-        process::exit(1);
+    let arguments = Arguments::parse();
+
+    match &arguments.command {
+        Commands::Parse{input_file,
+                        output_file} => {
+            if let Err(error) = parse::run(input_file,
+                                           output_file) {
+                eprintln!("{}", error);
+                process::exit(1);
+            }
+        },
+        Commands::Aggregate{input_file,
+                            whitelist_output_file,
+                            blacklist_output_file,
+                            min_depth,
+                            min_mismatch_ratio,
+                            min_samples_for_blacklist,
+                            min_samples_for_whitelist} => {
+            if let Err(error) = aggregate::run(input_file, 
+                                               whitelist_output_file,
+                                               blacklist_output_file,
+                                               min_depth,
+                                               min_mismatch_ratio,
+                                               min_samples_for_blacklist,
+                                               min_samples_for_whitelist) {
+                eprintln!("{}", error);
+                process::exit(1);
+            }
+        },
     }
 }

@@ -3,9 +3,11 @@ name = "aggregate_mpileup"
 version = "0.1.0"
 edition = "2021"
 authors = ["Keisuke Yamamoto"]
+about = "Parse and aggregate samtools mpileup file."
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 csv = "1.1.6"
 regex = "1.7.0"
+clap = {version = "4.0.32", features = ["derive"]}
