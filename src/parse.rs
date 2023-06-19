@@ -4,6 +4,7 @@ use std::error::Error;
 pub fn run(input_file: &str, output_file: &str) -> Result<(), Box<dyn Error>> {
     let regex_indel = Regex::new(r"[\+\-]{1}(\d+)").unwrap();
     let regex_mismatch = Regex::new(r"[ACGTNacgtn]{1}").unwrap();
+    let regex_header = Regex::new(r"\^[ACGTNacgtn]").unwrap();
 
     let mut reader = csv::ReaderBuilder::new()
         .delimiter(b'\t')
@@ -45,7 +46,8 @@ pub fn run(input_file: &str, output_file: &str) -> Result<(), Box<dyn Error>> {
             
             // count substitution base
             let count_substitution_base: i32 = (regex_mismatch.find_iter(pileup_reads).count() as i32)
-                                              - count_indel_base;
+                                              - count_indel_base
+                                              - (regex_header.find_iter(pileup_reads).count() as i32);
             
             // count match base
             let count_match_base: i32 = (pileup_reads.matches(".").count() as i32)
