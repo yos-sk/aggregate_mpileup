@@ -71,7 +71,7 @@ pub fn run(input_file: &str, output_file: &str) -> Result<(), Box<dyn Error>> {
                                          count_insertion_occurrence,
                                          count_deletion_occurrence];
             let output: Vec<String> = _output.iter().map(|x| x.to_string()).collect();
-            writer.write_field(output.join(","))?;
+            writer.write_field(output.join("\t"))?;
             
             record_index += 3;
         }
