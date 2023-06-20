@@ -1,7 +1,7 @@
 use regex::Regex;
 use std::error::Error;
 
-pub fn run(input_file: &str, output_file: &str) -> Result<(), Box<dyn Error>> {
+pub fn run(input_file: &str, output_file: &str, mode: &str) -> Result<(), Box<dyn Error>> {
     let regex_indel = Regex::new(r"[\+\-]{1}(\d+)").unwrap();
     let regex_mismatch = Regex::new(r"[ACGTNacgtn]{1}").unwrap();
     let regex_header = Regex::new(r"\^[ACGTNacgtn]").unwrap();
@@ -71,7 +71,13 @@ pub fn run(input_file: &str, output_file: &str) -> Result<(), Box<dyn Error>> {
                                          count_insertion_occurrence,
                                          count_deletion_occurrence];
             let output: Vec<String> = _output.iter().map(|x| x.to_string()).collect();
-            writer.write_field(output.join("\t"))?;
+            if mode == "single" {
+                for item in output.iter() {
+                    writer.write_field(item)?;
+                }
+            } else if mode == "multiple" {
+                writer.write_field(output.join(","))?;
+            }
             
             record_index += 3;
         }

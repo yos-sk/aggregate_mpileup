@@ -18,6 +18,9 @@ enum Commands {
         
         #[arg(short, long)]
         output_file: String,
+
+        #[arg(short, long)]
+        mode: String,
     },
     
     Aggregate {
@@ -49,9 +52,11 @@ fn main() {
 
     match &arguments.command {
         Commands::Parse{input_file,
-                        output_file} => {
+                        output_file,
+                        mode} => {
             if let Err(error) = parse::run(input_file,
-                                           output_file) {
+                                           output_file,
+                                           mode) {
                 eprintln!("{}", error);
                 process::exit(1);
             }
